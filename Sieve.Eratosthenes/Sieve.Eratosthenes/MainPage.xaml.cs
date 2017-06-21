@@ -25,7 +25,6 @@ namespace Sieve.Eratosthenes
         public MainPage()
         {
             this.InitializeComponent();
-            this.DataContext = new MainViewModel();
         }
     }
 }
