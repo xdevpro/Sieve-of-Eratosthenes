@@ -96,17 +96,17 @@ namespace Sieve.Eratosthenes.ViewModels
                 if (value < minRange)
                 {
                     int delta = minRange - value;
-                    if (range - delta > 0)
+                    if (value > 2)
                     {
                         range -= delta;
+                        IsDelayedProcessing = true;
                         minRange = value;
                     }
                     else
                     {
                         range = range - 1;
-                        minRange = 2;
+                        minRange = 1;
                     }
-                    IsDelayedBackwardProcessing = true;
                 }
                 else if (value > minRange)
                 {
@@ -152,7 +152,6 @@ namespace Sieve.Eratosthenes.ViewModels
         }
         
         bool IsDelayedProcessing { get; set; }
-        bool IsDelayedBackwardProcessing { get; set; }
         
         private bool isBusy;
         public bool IsBusy
@@ -179,44 +178,6 @@ namespace Sieve.Eratosthenes.ViewModels
         }
 
         #endregion
-        public async Task<bool> AdjustPrimeNumberRangesBackward()
-        {
-            return await Task<bool>.Run(async () =>
-            {
-                await RearrangeRange();
-                return true;
-            });
-        }
-
-        private async Task RearrangeRange()
-        {
-            int nextPrimeNumber = minRange;
-            while (!PrimeM.PrimeNumbers.Contains(++nextPrimeNumber)) ;
-            int i = PrimeM.PrimeNumbers.IndexOf(nextPrimeNumber);
-            if (i >= 0)
-            {
-                await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,
-                   () =>
-                   {
-                       for (int j = 0; j <= DisplayablePrimeNumberCount && i < PrimeM.PrimeNumbers.Count; j++, i++)
-                       {
-                           if (j < DisplayablePrimeNumbers.Count)
-                           {
-                               DisplayablePrimeNumbers[j].Number = PrimeM.PrimeNumbers[i];
-                           }
-                           else
-                           {
-                               DisplayablePrimeNumbers.Add(new NaturalNumberViewModel(PrimeM.PrimeNumbers[i], PrimeNumberSelectedNotified));
-                           }
-                       }
-
-                       minRange = DisplayablePrimeNumbers[0].Number;
-                       NotifyPropertyChanged("MinRange");
-                       range = DisplayablePrimeNumbers.Last().Number;
-                       NotifyPropertyChanged("Range");
-                   });
-            }
-        }
 
         private async Task<bool> StartPrimeNumbersComputation()
         {
@@ -224,7 +185,32 @@ namespace Sieve.Eratosthenes.ViewModels
             {
                 if (PrimeM.PrimeNumbers.Count > 0 && Range <= PrimeM.PrimeNumbers.Last())
                 {
-                    await RearrangeRange();
+                    int nextPrimeNumber = minRange;
+                    while (!PrimeM.PrimeNumbers.Contains(++nextPrimeNumber)) ;
+                    int i = PrimeM.PrimeNumbers.IndexOf(nextPrimeNumber);
+                    if (i >= 0)
+                    {
+                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,
+                           () =>
+                           {
+                               for (int j = 0; j <= DisplayablePrimeNumberCount && i < PrimeM.PrimeNumbers.Count; j++, i++)
+                               {
+                                   if (j < DisplayablePrimeNumbers.Count)
+                                   {
+                                       DisplayablePrimeNumbers[j].Number = PrimeM.PrimeNumbers[i];
+                                   }
+                                   else
+                                   {
+                                       DisplayablePrimeNumbers.Add(new NaturalNumberViewModel(PrimeM.PrimeNumbers[i], PrimeNumberSelectedNotified));
+                                   }
+                               }
+
+                               minRange = DisplayablePrimeNumbers[0].Number;
+                               NotifyPropertyChanged("MinRange");
+                               range = DisplayablePrimeNumbers.Last().Number;
+                               NotifyPropertyChanged("Range");
+                           });
+                    }
                     return true;
                 }
                 else
@@ -281,15 +267,6 @@ namespace Sieve.Eratosthenes.ViewModels
                 {
                     IsBusy = false;
                     IsDelayedProcessing = false;
-                }));
-            }
-            else if (IsDelayedBackwardProcessing)
-            {
-                IsBusy = true;
-                PrimeNumberProcess = new NotifyTaskCompletion<bool>(AdjustPrimeNumberRangesBackward(), new Action(() =>
-                {
-                    IsBusy = false;
-                    IsDelayedBackwardProcessing = false;
                 }));
             }
         }
