@@ -106,7 +106,7 @@ namespace Sieve.Eratosthenes.ViewModels
             }
         }
         
-        private int minRange = 2;
+        private int minRange = 1;
         public int MinRange
         {
             get => minRange;
@@ -183,10 +183,15 @@ namespace Sieve.Eratosthenes.ViewModels
                 await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,
                            () =>
                            {
-                               while (DisplayablePrimeNumberCount < DisplayablePrimeNumbers.Count && DisplayablePrimeNumbers.Count > 0)
+                               while (DisplayablePrimeNumberCount < DisplayablePrimeNumbers.Count && DisplayablePrimeNumbers.Count > 3)
                                {
                                    DisplayablePrimeNumbers.RemoveAt(DisplayablePrimeNumbers.Count - 1);
                                }
+
+                               minRange = DisplayablePrimeNumbers[0].Number;
+                               NotifyPropertyChanged("MinRange");
+                               range = DisplayablePrimeNumbers.Last().Number;
+                               NotifyPropertyChanged("Range");
                            });
                 return true;
             });
