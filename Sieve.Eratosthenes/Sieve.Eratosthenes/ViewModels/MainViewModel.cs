@@ -174,6 +174,14 @@ namespace Sieve.Eratosthenes.ViewModels
             }
         }
 
+        void SelectPrimeNumberRange()
+        {
+            minRange = DisplayablePrimeNumbers[0].Number;
+            NotifyPropertyChanged("MinRange");
+            range = DisplayablePrimeNumbers.Last().Number;
+            NotifyPropertyChanged("Range");
+        }
+
         #endregion
 
         private async Task<bool> AdjustWindowHeightWidth()
@@ -187,11 +195,7 @@ namespace Sieve.Eratosthenes.ViewModels
                                {
                                    DisplayablePrimeNumbers.RemoveAt(DisplayablePrimeNumbers.Count - 1);
                                }
-
-                               minRange = DisplayablePrimeNumbers[0].Number;
-                               NotifyPropertyChanged("MinRange");
-                               range = DisplayablePrimeNumbers.Last().Number;
-                               NotifyPropertyChanged("Range");
+                               SelectPrimeNumberRange();
                            });
                 return true;
             });
@@ -235,11 +239,7 @@ namespace Sieve.Eratosthenes.ViewModels
                                        DisplayablePrimeNumbers.Add(new NaturalNumberViewModel(PrimeM.PrimeNumbers[i], PrimeNumberSelectedNotified));
                                    }
                                }
-
-                               minRange = DisplayablePrimeNumbers[0].Number;
-                               NotifyPropertyChanged("MinRange");
-                               range = DisplayablePrimeNumbers.Last().Number;
-                               NotifyPropertyChanged("Range");
+                               SelectPrimeNumberRange();
                            });
                     }
                     return true;
@@ -263,11 +263,7 @@ namespace Sieve.Eratosthenes.ViewModels
                                        }
 
                                    }
-
-                                   minRange = DisplayablePrimeNumbers[0].Number;
-                                   NotifyPropertyChanged("MinRange");
-                                   range = DisplayablePrimeNumbers.Last().Number;
-                                   NotifyPropertyChanged("Range");
+                                   SelectPrimeNumberRange();
                                });
                     return true;
                 }

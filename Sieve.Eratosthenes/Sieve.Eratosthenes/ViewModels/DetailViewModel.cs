@@ -15,6 +15,7 @@ namespace Sieve.Eratosthenes.ViewModels
         private CancellationTokenSource TaskCTS { get; set; }
         public ObservableCollection<NaturalNumberViewModel> Numbers { get; set; }
         public DemoPrimeModel PrimeM { get; set; }
+        private int limit;
 
         public DetailViewModel()
         {
@@ -52,50 +53,41 @@ namespace Sieve.Eratosthenes.ViewModels
 
         async Task<bool> TriggerGenerateneturalNumber()
         {
+            await GenerateNaturalNumberRange();
             return await Task<bool>.Run(async () =>
             {
-                await GenerateNaturalNumberRange();
                 await PrimeM.StraightSieveEratosthenesDemo(limit, Numbers, TaskCTS);
                 return true;
             });
+        }
+        
+        async Task GenerateNaturalNumberRange()
+        {
+            int startFrom = 2, i;
+            if ((selectedPrimeNumber.Number - 50) >= 2)
+            {
+                startFrom = selectedPrimeNumber.Number - 50;
+                int x = startFrom % 10;
+                if ((startFrom - x) > 2)
+                {
+                    startFrom -= x;
+                }
+            }
+
+            for (i = startFrom; i <= startFrom + 99; i++)
+            {
+                var naturalNumVM = new NaturalNumberViewModel(i, null);
+                if (i == selectedPrimeNumber.Number)
+                    naturalNumVM.IsSelectedPrime = true;
+                Numbers.Add(naturalNumVM);
+            }
+            limit = i;
+            await Task.Delay(1);
         }
 
         public void StopPrimeRangeShowOff()
         {
             TaskCTS.Cancel();
-        }
-
-        int limit;
-
-        async Task<bool> GenerateNaturalNumberRange()
-        {
-            return await Task<bool>.Run(async () =>
-            {
-                int startFrom = 2, i;
-                if ((selectedPrimeNumber.Number - 50) >= 2)
-                {
-                    startFrom = selectedPrimeNumber.Number - 50;
-                    int x = startFrom % 10;
-                    if ((startFrom - x) > 2)
-                    {
-                        startFrom -= x;
-                    }
-                }
-
-                for (i = startFrom; i <= startFrom + 99; i++)
-                {
-                    var naturalNumVM = new NaturalNumberViewModel(i, null);
-                    if (i == selectedPrimeNumber.Number)
-                        naturalNumVM.IsSelectedPrime = true;
-                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,
-                              () =>
-                              {
-                                  Numbers.Add(naturalNumVM);
-                              });
-                }
-                limit = i;
-                return true;
-            });
         }
     }
 }
