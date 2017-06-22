@@ -45,9 +45,9 @@
                 <ColumnDefinition Width="80"></ColumnDefinition>
                 <ColumnDefinition Width="80"></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <TextBlock FontFamily="Segoe UI Symbol" Margin="20,0,0,0" FontSize="13" Text="2" VerticalAlignment="Center" HorizontalAlignment="Center"></TextBlock>
+            <TextBlock FontFamily="Segoe UI Symbol" Margin="20,0,0,0" FontSize="13" Text="1" VerticalAlignment="Center" HorizontalAlignment="Center"></TextBlock>
             <TextBlock Grid.Column="1" FontFamily="Segoe UI Symbol" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" Text="{Binding MinRange}" Margin="3"></TextBlock>
-            <uwpControl:RangeSelector x:Name="NumberRanger" Grid.Column="2" Margin="5" Minimum="2" Maximum="{Binding MaxRange}"
+            <uwpControl:RangeSelector x:Name="NumberRanger" Grid.Column="2" Margin="5" Minimum="1" Maximum="{Binding MaxRange}"
                                       RangeMax="{Binding Range, Mode=TwoWay}"
                                       RangeMin="{Binding MinRange, Mode=TwoWay}"
                                       IsTouchOptimized="True"
@@ -147,5 +147,6 @@
         <Grid Grid.RowSpan="3" Grid.ColumnSpan="3" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <ProgressRing IsActive="True" Foreground="DarkOrange" Height="75" Width="75" ></ProgressRing>
         </Grid>
+        <Grid Grid.RowSpan="3" Grid.ColumnSpan="3" Background="Black"  Opacity="0.5" Visibility="{Binding IsDelayedHeightWidthAdjustment, Converter={StaticResource BoolToVis}}"/>
     </Grid>
 </Page>

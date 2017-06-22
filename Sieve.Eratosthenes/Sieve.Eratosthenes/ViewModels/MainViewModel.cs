@@ -20,7 +20,19 @@ namespace Sieve.Eratosthenes.ViewModels
     {
         public ObservableCollection<NaturalNumberViewModel> DisplayablePrimeNumbers { get; set; }
         public PrimeModel PrimeM { get; set; }
-        public NotifyTaskCompletion<bool> PrimeNumberProcess { get; set; }  
+        public NotifyTaskCompletion<bool> PrimeNumberProcess { get; set; }
+        bool IsDelayedProcessing { get; set; }
+
+        private bool isDelayedHeightWidthAdjustment;
+        public bool IsDelayedHeightWidthAdjustment
+        {
+            get => isDelayedHeightWidthAdjustment;
+            set
+            {
+                isDelayedHeightWidthAdjustment = value;
+                NotifyPropertyChanged();
+            }
+        }
 
         private DetailViewModel detailVM;
         public DetailViewModel DetailVM
@@ -56,6 +68,7 @@ namespace Sieve.Eratosthenes.ViewModels
             set
             {
                 adjustedBoundHeight = value;
+                IsDelayedHeightWidthAdjustment = true;
                 NotifyPropertyChanged();
             }
         }
@@ -67,13 +80,14 @@ namespace Sieve.Eratosthenes.ViewModels
             set
             {
                 adjustedBoundWidth = value;
+                IsDelayedHeightWidthAdjustment = true;
                 NotifyPropertyChanged();
             }
         }
 
         public int DisplayablePrimeNumberCount
         {
-            get => (int)((Math.Floor(AdjustedBoundHeight) / 53) * (Math.Floor(AdjustedBoundWidth) / 53));
+            get => (int)((Math.Floor(AdjustedBoundHeight) / 90) * (Math.Floor(AdjustedBoundWidth) / 53));
         }
         
         private int maxRange = 10000;
@@ -82,8 +96,13 @@ namespace Sieve.Eratosthenes.ViewModels
             get => maxRange;
             set
             {
+                if (range > value)
+                {
+                    Range = value;
+                }
                 maxRange = value;
                 NotifyPropertyChanged();
+                IsDelayedProcessing = true;
             }
         }
         
@@ -93,36 +112,17 @@ namespace Sieve.Eratosthenes.ViewModels
             get => minRange;
             set
             {
-                if (value < minRange)
+                int delta = value - minRange;
+                minRange = value;
+                if (range + delta > MaxRange)
                 {
-                    int delta = minRange - value;
-                    if (value > 2)
-                    {
-                        range -= delta;
-                        IsDelayedProcessing = true;
-                        minRange = value;
-                    }
-                    else
-                    {
-                        range = range - 1;
-                        minRange = 1;
-                    }
+                    range = MaxRange;
                 }
-                else if (value > minRange)
+                else
                 {
-                    int delta = value - minRange;
-                    if (range + delta <= maxRange)
-                    {
-                        range += delta;
-                        IsDelayedProcessing = true;
-                        minRange = value;
-                    }
-                    else
-                    {
-                        range = MaxRange;
-                    }
+                    range += delta;
                 }
-                
+                IsDelayedProcessing = true;
                 NotifyPropertyChanged("Range");
                 NotifyPropertyChanged();
             }
@@ -134,24 +134,21 @@ namespace Sieve.Eratosthenes.ViewModels
             get => range;
             set
             {
-                if (value < range)
+                int delta = value - range;
+                range = value;
+                if (minRange + delta < 1)
                 {
-                    int delta = range - value;
-                    minRange -= (minRange - delta > 0) ? delta : minRange - 1;
+                    minRange = 1;
                 }
-                else if (value > range)
+                else
                 {
-                    int delta = value - range;
                     minRange += delta;
                 }
-                range = value;
                 IsDelayedProcessing = true;
                 NotifyPropertyChanged("MinRange");
                 NotifyPropertyChanged();
             }
         }
-        
-        bool IsDelayedProcessing { get; set; }
         
         private bool isBusy;
         public bool IsBusy
@@ -179,15 +176,44 @@ namespace Sieve.Eratosthenes.ViewModels
 
         #endregion
 
+        private async Task<bool> AdjustWindowHeightWidth()
+        {
+            return await Task.Run(async () =>
+            {
+                await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,
+                           () =>
+                           {
+                               while (DisplayablePrimeNumberCount < DisplayablePrimeNumbers.Count && DisplayablePrimeNumbers.Count > 0)
+                               {
+                                   DisplayablePrimeNumbers.RemoveAt(DisplayablePrimeNumbers.Count - 1);
+                               }
+                           });
+                return true;
+            });
+        }
+
         private async Task<bool> StartPrimeNumbersComputation()
         {
             return await Task.Run(async () =>
             {
                 if (PrimeM.PrimeNumbers.Count > 0 && Range <= PrimeM.PrimeNumbers.Last())
                 {
-                    int nextPrimeNumber = minRange;
-                    while (!PrimeM.PrimeNumbers.Contains(++nextPrimeNumber)) ;
-                    int i = PrimeM.PrimeNumbers.IndexOf(nextPrimeNumber);
+                    int nextPrimeNumber;
+                    int i;
+                    if (Range == MaxRange)
+                    {
+                        nextPrimeNumber = Range;
+                        while (!PrimeM.PrimeNumbers.Contains(--nextPrimeNumber)) ;
+
+                        i = PrimeM.PrimeNumbers.IndexOf(nextPrimeNumber) - DisplayablePrimeNumberCount;
+                    }
+                    else
+                    {
+                        nextPrimeNumber = minRange;
+                        while (!PrimeM.PrimeNumbers.Contains(++nextPrimeNumber)) ;
+
+                        i = PrimeM.PrimeNumbers.IndexOf(nextPrimeNumber);
+                    }
                     if (i >= 0)
                     {
                         await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,
@@ -267,6 +293,16 @@ namespace Sieve.Eratosthenes.ViewModels
                 {
                     IsBusy = false;
                     IsDelayedProcessing = false;
+                    IsDelayedHeightWidthAdjustment = false;
+                }));
+            }
+            if (IsDelayedHeightWidthAdjustment)
+            {
+                IsBusy = true;
+                PrimeNumberProcess = new NotifyTaskCompletion<bool>(AdjustWindowHeightWidth(), new Action(() =>
+                {
+                    IsBusy = false;
+                    IsDelayedHeightWidthAdjustment = false;
                 }));
             }
         }
@@ -280,7 +316,7 @@ namespace Sieve.Eratosthenes.ViewModels
 
         public void PageSizeChangedCommandAction()
         {
-            AdjustedBoundHeight = (int)Window.Current.Bounds.Height - 350;
+            AdjustedBoundHeight = (int)Window.Current.Bounds.Height;
             AdjustedBoundWidth = (int)Window.Current.Bounds.Width;
         }
         #endregion
